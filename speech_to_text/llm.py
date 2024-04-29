@@ -28,7 +28,7 @@ class CustomChatbot:
 
     def create_custom_prompt(self):
         template = '''
-        貴方は愉快な会話できる友達です。毎度の回答はなるべく45文字以内に抑えてください。返答は、質問と同じ言語を使ってください。
+        貴方は愉快な会話できる友達です。楽しく会話を進めてください。良い感じに相槌もしてください。
         Current conversation: {history}
         Human: {input}
         AI Assistant:"""

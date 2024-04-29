@@ -17,6 +17,8 @@ from .llm import CustomChatbot
 from playsound import playsound
 from .tts import get_audio_file_from_text
 
+import os,uuid,re
+
 class AppOptions(NamedTuple):
     audio_device: int
     silence_limit: int = 8
@@ -82,13 +84,29 @@ class AudioTranscriber:
                     for segment in segments:
                         
                         eel.display_transcription(segment.text)
-                        
                         resp = self.chatbot.run(segment.text)
                         eel.on_recive_message(resp)
-                        wav_data = get_audio_file_from_text(resp)
-                        with open("tmp.wav", mode='bw') as f:
-                            f.write(wav_data)
-                        playsound("tmp.wav")
+
+                        # 分割文字を結果に含める
+                        split_text = re.split(r'([。?!])', resp)
+                        # 分割文字を前のテキストに追加
+                        split_text_with_delimiters = [split_text[i] + split_text[i + 1] for i in range(0, len(split_text) - 1, 2)]
+                        for each in split_text_with_delimiters:
+                            eel.on_recive_message("getting audio from voicevox")
+                            wav_data = get_audio_file_from_text(each)
+                            eel.on_recive_message("got audio from voicevox")
+
+                            # Use tempfile to create a temporary file
+                            temp_folder = "temp_audio_files"
+                            os.makedirs(temp_folder, exist_ok=True)
+                            temp_file_path = os.path.join(temp_folder, "temp_audio_" + str(uuid.uuid4()) + ".wav")
+                            with open(temp_file_path, "wb") as temp_file:
+                                temp_file.write(wav_data)
+                            playsound(temp_file_path)
+
+                        # Play the sound
+                        
+                        
 
                         if self.websocket_server is not None:
                             await self.websocket_server.send_message(segment.text)
