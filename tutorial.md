@@ -1,0 +1,5 @@
+- eelにportの概念はない（おそらく）
+    - pythonのGUIなので
+- utils/audio_transcriber.py で文字起こしの処理をしている
+- web socketの選択肢をチェックすると、port 8765のserverが立ち上がる。
+    - websocket_server.py

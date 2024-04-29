@@ -21,7 +21,7 @@ class AppOptions(NamedTuple):
     noise_threshold: int = 5
     non_speech_threshold: float = 0.1
     include_non_speech: bool = False
-    create_audio_file: bool = True
+    create_audio_file: bool = False
     use_websocket_server: bool = False
     use_openai_api: bool = False
 
@@ -77,6 +77,7 @@ class AudioTranscriber:
                     segments, _ = await self.event_loop.run_in_executor(executor, func)
 
                     for segment in segments:
+                        
                         eel.display_transcription(segment.text)
                         if self.websocket_server is not None:
                             await self.websocket_server.send_message(segment.text)
