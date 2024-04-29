@@ -128,4 +128,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-.temp_audio_files/
+/temp_audio_files/*
