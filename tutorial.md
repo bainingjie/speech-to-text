@@ -1,3 +1,5 @@
+-voicevoxを別terminalで立ち上げる
+    -https://github.com/VOICEVOX/voicevox_engine
 - eelにportの概念はない（おそらく）
     - pythonのGUIなので
 - utils/audio_transcriber.py で文字起こしの処理をしている

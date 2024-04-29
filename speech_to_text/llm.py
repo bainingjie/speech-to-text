@@ -44,7 +44,7 @@ class CustomChatbot:
 
     def run(self,text):
         response = self.conversation.invoke(text)
-        return response
+        return response['response']
 
 class MyCustomCallbackHandler(BaseCallbackHandler):
     def __init__(self):

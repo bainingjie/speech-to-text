@@ -14,7 +14,8 @@ from .utils.file_utils import write_audio
 from .websoket_server import WebSocketServer
 from .openai_api import OpenAIAPI
 from .llm import CustomChatbot
-
+from playsound import playsound
+from .tts import get_audio_file_from_text
 
 class AppOptions(NamedTuple):
     audio_device: int
@@ -84,7 +85,11 @@ class AudioTranscriber:
                         
                         resp = self.chatbot.run(segment.text)
                         eel.on_recive_message(resp)
-                        
+                        wav_data = get_audio_file_from_text(resp)
+                        with open("tmp.wav", mode='bw') as f:
+                            f.write(wav_data)
+                        playsound("tmp.wav")
+
                         if self.websocket_server is not None:
                             await self.websocket_server.send_message(segment.text)
 
