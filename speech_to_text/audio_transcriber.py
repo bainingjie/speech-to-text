@@ -13,6 +13,7 @@ from .vad import Vad
 from .utils.file_utils import write_audio
 from .websoket_server import WebSocketServer
 from .openai_api import OpenAIAPI
+from .llm import CustomChatbot
 
 
 class AppOptions(NamedTuple):
@@ -51,6 +52,7 @@ class AudioTranscriber:
         self.stream = None
         self._running = asyncio.Event()
         self._transcribe_task = None
+        self.chatbot=CustomChatbot()
 
     async def transcribe_audio(self):
         # Ignore parameters that affect performance
@@ -79,6 +81,10 @@ class AudioTranscriber:
                     for segment in segments:
                         
                         eel.display_transcription(segment.text)
+                        
+                        resp = self.chatbot.run(segment.text)
+                        eel.on_recive_message(resp)
+                        
                         if self.websocket_server is not None:
                             await self.websocket_server.send_message(segment.text)
 
