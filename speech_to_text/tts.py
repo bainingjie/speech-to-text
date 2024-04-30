@@ -1,6 +1,9 @@
 import requests
 import json
 import time
+from pydub import AudioSegment
+from pydub.playback import play
+import os,io,eel
 
 def get_audio_query(text, speaker = 1):
     query_payload = {"text": text, "speaker": speaker}
@@ -41,3 +44,11 @@ def extract_wav_length(query_data):
 def get_audio_file_from_text(text):
     query_data = get_audio_query(text)
     return run_synthesis(query_data)
+
+def tts_worker(tts_queue):
+    while True:
+        wav_data = tts_queue.get()
+        if wav_data is None:
+            break
+        audio_segment = AudioSegment.from_file(io.BytesIO(wav_data), format="wav")
+        play(audio_segment)

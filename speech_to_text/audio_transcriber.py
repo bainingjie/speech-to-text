@@ -36,6 +36,7 @@ class AudioTranscriber:
         app_options: AppOptions,
         websocket_server: WebSocketServer,
         openai_api: OpenAIAPI,
+        tts_queue: queue.Queue
     ):
         self.event_loop = event_loop
         self.whisper_model: WhisperModel = whisper_model
@@ -52,7 +53,7 @@ class AudioTranscriber:
         self.stream = None
         self._running = asyncio.Event()
         self._transcribe_task = None
-        self.chatbot=CustomChatbot()
+        self.chatbot = CustomChatbot(tts_queue)
 
     async def transcribe_audio(self):
         # Ignore parameters that affect performance

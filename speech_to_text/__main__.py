@@ -10,6 +10,13 @@ from .utils.audio_utils import get_valid_input_devices, base64_to_audio
 from .utils.file_utils import read_json, write_json, write_audio
 from .websoket_server import WebSocketServer
 from .openai_api import OpenAIAPI
+from queue import Queue
+from threading import Thread
+from .tts import tts_worker
+
+tts_queue = Queue()
+tts_thread = Thread(target=tts_worker, args=(tts_queue,), daemon=True)
+tts_thread.start()
 
 eel.init("web")
 
@@ -89,6 +96,7 @@ def start_transcription(user_settings):
             app_settings,
             websocket_server,
             openai_api,
+            tts_queue
         )
         asyncio.set_event_loop(event_loop)
         thread = threading.Thread(target=event_loop.run_forever, daemon=True)
