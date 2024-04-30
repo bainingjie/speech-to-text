@@ -47,6 +47,14 @@ class CustomChatbot:
 
     def run(self,text):
         response = self.conversation.invoke(text)
+
+    
+        eel.on_recive_message(response['response'])
+        eel.on_recive_message("getting audio from voicevox")
+        wav_data = get_audio_file_from_text(response['response'])
+        eel.on_recive_message("recieved audio from voicevox")
+        self.tts_queue.put(wav_data)
+
         return response['response']
 
 class MyCustomCallbackHandler(BaseCallbackHandler):
@@ -56,15 +64,16 @@ class MyCustomCallbackHandler(BaseCallbackHandler):
     def on_llm_new_token(self, token: str, **kwargs: any) -> None:
         '''新しいtokenが来たらprintする'''
         self.temp = self.temp + token
-        for split_word in ["。", "?", "!"]:
-            if split_word in self.temp:
-                eel.on_recive_message(self.temp)
-                eel.on_recive_message("getting audio from voicevox")
-                temp2 = copy.deepcopy(self.temp)
-                self.temp = ""
-                wav_data = get_audio_file_from_text(temp2)
-                eel.on_recive_message("recieved audio from voicevox")
-                self.tts_queue.put(wav_data)
+
+        # for split_word in ["。", "?", "!"]:
+        #     if split_word in self.temp:
+        #         eel.on_recive_message(self.temp)
+        #         eel.on_recive_message("getting audio from voicevox")
+        #         temp2 = copy.deepcopy(self.temp)
+        #         self.temp = ""
+        #         wav_data = get_audio_file_from_text(temp2)
+        #         eel.on_recive_message("recieved audio from voicevox")
+        #         self.tts_queue.put(wav_data)
                 
 
 # if __name__ == "__main__":
