@@ -38,15 +38,6 @@ def run_synthesis(query_data, speaker=0, max_retries=5, retry_interval=0.1):
             time.sleep(retry_interval)
     raise Exception("Failed to run synthesis after {} retries".format(max_retries))
 
-def extract_wav_length(query_data):
-    length = 0
-    for accent_phrase in query_data["accent_phrases"]:
-        for mora in accent_phrase["moras"]:
-            if mora["consonant_length"] != None:
-                length += mora["consonant_length"]
-            if mora["vowel_length"] != None:
-                length += mora["vowel_length"]
-    return length
 
 def get_audio_file_from_text(text):
     eel.on_recive_message("tts request1 start")

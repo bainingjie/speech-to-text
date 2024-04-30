@@ -82,7 +82,8 @@ class AudioTranscriber:
                     for segment in segments:
                         
                         eel.display_transcription(segment.text)
-                        resp = self.chatbot.run(segment.text)
+                        await self.chatbot.run(segment.text)
+
                         # eel.on_recive_message(resp)
                         
 
