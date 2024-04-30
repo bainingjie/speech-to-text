@@ -16,11 +16,9 @@ class WebSocketServer:
 
     async def start_server(self):
         self.server = await websockets.serve(self.handler, "localhost", 8765)
-        self.call_websocket_client()
+        # self.call_websocket_client()
 
-    def call_websocket_client(self):
-        path = os.path.join(app_root_dir, "websocket_client", "websocket_client.html")
-        webbrowser.open("file://" + path)
+
 
     async def handler(self, ws: websockets.WebSocketServerProtocol, path):
         self.websocket = ws

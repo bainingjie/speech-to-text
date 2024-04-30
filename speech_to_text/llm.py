@@ -63,6 +63,7 @@ class MyCustomCallbackHandler(BaseCallbackHandler):
                 temp2 = copy.deepcopy(self.temp)
                 self.temp = ""
                 wav_data = get_audio_file_from_text(temp2)
+                eel.on_recive_message("recieved audio from voicevox")
                 self.tts_queue.put(wav_data)
                 
 

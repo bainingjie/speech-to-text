@@ -83,7 +83,7 @@ class AudioTranscriber:
                         
                         eel.display_transcription(segment.text)
                         resp = self.chatbot.run(segment.text)
-                        eel.on_recive_message(resp)
+                        # eel.on_recive_message(resp)
                         
 
                         if self.websocket_server is not None:

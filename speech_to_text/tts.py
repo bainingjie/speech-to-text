@@ -50,5 +50,6 @@ def tts_worker(tts_queue):
         wav_data = tts_queue.get()
         if wav_data is None:
             break
+        eel.on_recive_message("tts_worker start to play")
         audio_segment = AudioSegment.from_file(io.BytesIO(wav_data), format="wav")
         play(audio_segment)
