@@ -58,6 +58,7 @@ class MyCustomCallbackHandler(BaseCallbackHandler):
         self.temp = self.temp + token
         for split_word in ["。", "?", "!"]:
             if split_word in self.temp:
+                eel.on_recive_message(self.temp)
                 eel.on_recive_message("getting audio from voicevox")
                 wav_data = get_audio_file_from_text(self.temp)
                 audio_segment = AudioSegment.from_file(io.BytesIO(wav_data), format="wav")

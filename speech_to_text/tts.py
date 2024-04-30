@@ -2,8 +2,8 @@ import requests
 import json
 import time
 
-def get_audio_query(text, speaker = 1,speed=1):
-    query_payload = {"text": text, "speaker": speaker,"speedScale":2}
+def get_audio_query(text, speaker = 1):
+    query_payload = {"text": text, "speaker": speaker}
     while True:
         try:
             url = "http://localhost:50021/audio_query"
