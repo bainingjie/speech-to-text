@@ -16,8 +16,9 @@ from .openai_api import OpenAIAPI
 from .llm import CustomChatbot
 from playsound import playsound
 from .tts import get_audio_file_from_text
-
-import os,uuid,re
+from pydub import AudioSegment
+from pydub.playback import play
+import os,uuid,re,io
 
 class AppOptions(NamedTuple):
     audio_device: int
@@ -96,13 +97,9 @@ class AudioTranscriber:
                             wav_data = get_audio_file_from_text(each)
                             eel.on_recive_message("got audio from voicevox")
 
-                            # Use tempfile to create a temporary file
-                            temp_folder = "temp_audio_files"
-                            os.makedirs(temp_folder, exist_ok=True)
-                            temp_file_path = os.path.join(temp_folder, "temp_audio_" + str(uuid.uuid4()) + ".wav")
-                            with open(temp_file_path, "wb") as temp_file:
-                                temp_file.write(wav_data)
-                            playsound(temp_file_path)
+                            # メモリ上でオーディオデータを再生
+                            audio_segment = AudioSegment.from_file(io.BytesIO(wav_data), format="wav")
+                            play(audio_segment)
 
                         # Play the sound
                         
