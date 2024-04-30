@@ -5,7 +5,10 @@ from langchain.prompts import PromptTemplate
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import AsyncCallbackManager
 from dotenv import load_dotenv
-import os
+from pydub import AudioSegment
+from pydub.playback import play
+import os,io,eel
+from .tts import get_audio_file_from_text
 
 class CustomChatbot:
     def __init__(self):
@@ -53,11 +56,17 @@ class MyCustomCallbackHandler(BaseCallbackHandler):
     def on_llm_new_token(self, token: str, **kwargs: any) -> None:
         '''新しいtokenが来たらprintする'''
         self.temp = self.temp + token
-        for split_word in ["、", "。", "?", "!"]:
+        for split_word in ["。", "?", "!"]:
             if split_word in self.temp:
-                print(self.temp)
+                eel.on_recive_message("getting audio from voicevox")
+                wav_data = get_audio_file_from_text(self.temp)
+                audio_segment = AudioSegment.from_file(io.BytesIO(wav_data), format="wav")
+                play(audio_segment)
+                eel.on_recive_message("got audio from voicevox")
                 self.temp = ""
 
 # if __name__ == "__main__":
 #     chatbot = CustomChatbot()
 #     chatbot.run("hi")
+
+

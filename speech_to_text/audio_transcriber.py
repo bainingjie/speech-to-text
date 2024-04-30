@@ -14,11 +14,7 @@ from .utils.file_utils import write_audio
 from .websoket_server import WebSocketServer
 from .openai_api import OpenAIAPI
 from .llm import CustomChatbot
-from playsound import playsound
 from .tts import get_audio_file_from_text
-from pydub import AudioSegment
-from pydub.playback import play
-import os,uuid,re,io
 
 class AppOptions(NamedTuple):
     audio_device: int
@@ -87,22 +83,6 @@ class AudioTranscriber:
                         eel.display_transcription(segment.text)
                         resp = self.chatbot.run(segment.text)
                         eel.on_recive_message(resp)
-
-                        # 分割文字を結果に含める
-                        split_text = re.split(r'([。?!])', resp)
-                        # 分割文字を前のテキストに追加
-                        split_text_with_delimiters = [split_text[i] + split_text[i + 1] for i in range(0, len(split_text) - 1, 2)]
-                        for each in split_text_with_delimiters:
-                            eel.on_recive_message("getting audio from voicevox")
-                            wav_data = get_audio_file_from_text(each)
-                            eel.on_recive_message("got audio from voicevox")
-
-                            # メモリ上でオーディオデータを再生
-                            audio_segment = AudioSegment.from_file(io.BytesIO(wav_data), format="wav")
-                            play(audio_segment)
-
-                        # Play the sound
-                        
                         
 
                         if self.websocket_server is not None:
