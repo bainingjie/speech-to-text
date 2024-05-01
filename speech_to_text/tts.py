@@ -3,7 +3,7 @@ import json
 import time
 from pydub import AudioSegment
 from pydub.playback import play
-import os,io,eel
+import os,io,eel,asyncio
 
 def get_audio_query(text, speaker=1, max_retries=5, retry_interval=0.1):
     query_payload = {"text": text, "speaker": speaker}
@@ -23,7 +23,8 @@ def get_audio_query(text, speaker=1, max_retries=5, retry_interval=0.1):
 
 def run_synthesis(query_data, speaker=0, max_retries=5, retry_interval=0.1):
     synth_payload = {"speaker": speaker}
-    query_data["speedScale"] = 1
+    query_data["speedScale"] = 1.5
+    query_data["outputSamplingRate"] = 8000
     retries = 0
     while retries < max_retries:
         try:
@@ -45,11 +46,23 @@ def get_audio_file_from_text(text):
     
     return run_synthesis(query_data)
 
-def tts_worker(tts_queue):
+
+import base64
+
+def tts_worker(tts_queue, websocket_server):
     while True:
         wav_data = tts_queue.get()
         if wav_data is None:
             break
-        eel.on_recive_message("tts_worker start to play")
-        audio_segment = AudioSegment.from_file(io.BytesIO(wav_data), format="wav")
-        play(audio_segment)
+        eel.on_recive_message("tts_worker start to process")
+        audio_segment = AudioSegment.from_file(io.BytesIO(wav_data), format="wav", frame_rate=8000, channels=1, sample_width=2)
+
+        # 音声データをバイナリに変換
+        binary_data = audio_segment.raw_data
+        
+        # バイナリデータをbase64でエンコード
+        base64_data = base64.b64encode(binary_data).decode('utf-8')
+        
+        # WebSocketサーバーを介してエンコードされた音声データを送信
+        if websocket_server._on_tts_audio_handler is not None:
+            asyncio.run_coroutine_threadsafe(websocket_server._on_tts_audio_handler(base64_data), websocket_server.loop)

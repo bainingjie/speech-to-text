@@ -13,17 +13,19 @@ class WebSocketServer:
         self.websocket: Optional[websockets.WebSocketServerProtocol] = None
         self.loop = loop
         self.server = None
+        self._on_message_handler = None
+        self._on_tts_audio_handler = None
 
     async def start_server(self):
+        print(f"Starting WebSocket server on ws://localhost:{8765}")
         self.server = await websockets.serve(self.handler, "localhost", 8765)
-        # self.call_websocket_client()
-
-
 
     async def handler(self, ws: websockets.WebSocketServerProtocol, path):
         self.websocket = ws
         try:
-            await ws.wait_closed()
+            async for message in ws:
+                if self._on_message_handler is not None:
+                    await self._on_message_handler(message)
         finally:
             if self.websocket is ws:
                 self.websocket = None
@@ -40,3 +42,17 @@ class WebSocketServer:
     def send_message_threadsafe(self, message: str):
         if self.websocket is not None:
             asyncio.run_coroutine_threadsafe(self.send_message(message), self.loop)
+
+    async def send_binary(self, data):
+        if self.websocket is not None:
+            await self.websocket.send(data)
+
+    def on_message(self, handler):
+        self._on_message_handler = handler
+        return handler
+
+    def on_tts_audio(self, handler):
+        async def wrapper(data):
+            await handler(data)
+        self._on_tts_audio_handler = wrapper
+        return wrapper

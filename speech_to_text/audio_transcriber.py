@@ -55,46 +55,35 @@ class AudioTranscriber:
         self._transcribe_task = None
         self.chatbot = CustomChatbot(tts_queue)
 
-    async def transcribe_audio(self):
+    async def transcribe_audio(self, audio_data: np.ndarray):
+        print(f"Audio data shape: {audio_data.shape}")  # 追加: 音声データの形状を出力
+        print(f"Audio data dtype: {audio_data.dtype}")  # 追加: 音声データの型を出力
+        eel.on_recive_message("Received audio data from WebSocket")  # 追加
+
         # Ignore parameters that affect performance
         transcribe_settings = self.transcribe_settings.copy()
         transcribe_settings["without_timestamps"] = True
         transcribe_settings["word_timestamps"] = False
 
         with ThreadPoolExecutor() as executor:
-            while self.transcribing:
-                try:
-                    # Get audio data from queue with a timeout
-                    audio_data = await self.event_loop.run_in_executor(
-                        executor, functools.partial(self.audio_queue.get, timeout=3.0)
-                    )
+            # Create a partial function for the model's transcribe method
+            func = functools.partial(
+                self.whisper_model.transcribe,
+                audio=audio_data,
+                **transcribe_settings,
+            )
 
-                    # Create a partial function for the model's transcribe method
-                    func = functools.partial(
-                        self.whisper_model.transcribe,
-                        audio=audio_data,
-                        **transcribe_settings,
-                    )
+            # Run the transcribe method in a thread
+            eel.on_recive_message("partiral function start run")
+            segments, _ = await self.event_loop.run_in_executor(executor, func)
+            eel.on_recive_message("partial function done")
 
-                    # Run the transcribe method in a thread
-                    segments, _ = await self.event_loop.run_in_executor(executor, func)
+            for segment in segments:
+                print(f"Transcribed text: {segment.text}")
+                eel.on_recive_message(f"Transcribed text: {segment.text}") 
+                eel.display_transcription(segment.text)
+                await self.chatbot.run(segment.text)
 
-                    for segment in segments:
-                        
-                        eel.display_transcription(segment.text)
-                        await self.chatbot.run(segment.text)
-
-                        # eel.on_recive_message(resp)
-                        
-
-                        if self.websocket_server is not None:
-                            await self.websocket_server.send_message(segment.text)
-
-                except queue.Empty:
-                    # Skip to the next iteration if a timeout occurs
-                    continue
-                except Exception as e:
-                    eel.on_recive_message(str(e))
 
     def process_audio(self, audio_data: np.ndarray, frames: int, time, status):
         is_speech = self.vad.is_speech(audio_data)
@@ -178,14 +167,7 @@ class AudioTranscriber:
     async def start_transcription(self):
         try:
             self.transcribing = True
-            self.stream = create_audio_stream(
-                self.app_options.audio_device, self.process_audio
-            )
-            self.stream.start()
             self._running.set()
-            self._transcribe_task = asyncio.run_coroutine_threadsafe(
-                self.transcribe_audio(), self.event_loop
-            )
             eel.on_recive_message("Transcription started.")
             while self._running.is_set():
                 await asyncio.sleep(1)
@@ -199,19 +181,8 @@ class AudioTranscriber:
                 self.event_loop.call_soon_threadsafe(self._transcribe_task.cancel)
                 self._transcribe_task = None
 
-            if self.app_options.create_audio_file and len(self.all_audio_data_list) > 0:
-                audio_data = np.concatenate(self.all_audio_data_list)
-                self.all_audio_data_list.clear()
-                write_audio("web", "voice", audio_data)
-                self.batch_transcribe_audio(audio_data)
+            # ... (streamに関連する処理を削除)
 
-            if self.stream is not None:
-                self._running.clear()
-                self.stream.stop()
-                self.stream.close()
-                self.stream = None
-                eel.on_recive_message("Transcription stopped.")
-            else:
-                eel.on_recive_message("No active stream to stop.")
+            eel.on_recive_message("Transcription stopped.")
         except Exception as e:
             eel.on_recive_message(str(e))

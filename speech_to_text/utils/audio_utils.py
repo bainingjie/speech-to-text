@@ -2,7 +2,7 @@ import sounddevice as sd
 import io
 import soundfile as sf
 import numpy as np
-import librosa
+import librosa,base64
 
 
 # get a list of valid input devices
@@ -37,11 +37,17 @@ def create_audio_stream(selected_device, callback):
     return stream
 
 
-def base64_to_audio(audio_data):
-    audio_bytes = bytes(audio_data)
-    audio_file = io.BytesIO(audio_bytes)
-    data, samplerate = sf.read(audio_file)
-    # whisper samplerate is 16k
-    resample_data = librosa.resample(y=data, orig_sr=samplerate, target_sr=16000)
+def base64_to_audio(base64_string):
+    try:
+        # Base64文字列のパディングを修正
+        padding = len(base64_string) % 4
+        if padding != 0:
+            base64_string += "=" * (4 - padding)
 
-    return resample_data.astype(np.float32)
+        audio_data = base64.b64decode(base64_string)
+        audio_bytes = np.frombuffer(audio_data, dtype=np.int16)
+        audio_float32 = audio_bytes.astype(np.float32) / 32768.0  # Convert to float32 and normalize
+        return audio_float32
+    except (base64.binascii.Error, ValueError) as e:
+        print(f"Error decoding base64 string: {e}")
+        return np.array([])
