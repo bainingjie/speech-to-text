@@ -27,4 +27,4 @@ def write_audio(dir_name: str, file_name: str, data):
     if os.path.exists(file_path):
         os.remove(file_path)
 
-    sf.write(file_path, data, 24000)
+    sf.write(file_path, data, 16000)

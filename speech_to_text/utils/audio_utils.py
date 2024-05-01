@@ -45,8 +45,7 @@ def base64_to_audio(base64_string):
             base64_string += "=" * (4 - padding)
 
         audio_data = base64.b64decode(base64_string)
-        audio_bytes = np.frombuffer(audio_data, dtype=np.int16)
-        audio_float32 = audio_bytes.astype(np.float32) / 32768.0  # Convert to float32 and normalize
+        audio_float32 = np.frombuffer(audio_data, dtype=np.float32)
         return audio_float32
     except (base64.binascii.Error, ValueError) as e:
         print(f"Error decoding base64 string: {e}")

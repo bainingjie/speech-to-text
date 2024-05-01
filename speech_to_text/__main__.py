@@ -92,13 +92,9 @@ def start_transcription(user_settings):
         @websocket_server.on_message
         async def handle_websocket_message(message):
             global transcriber
-            eel.on_recive_message("message start to decode")
             audio_data = base64_to_audio(message)  # WebSocketから受信した音声データをデコード
-            eel.on_recive_message("message decoded")
-            print(f"Received audio data length: {len(audio_data)}")  # 追加: 受信した音声データの長さを出力
             if len(audio_data) > 0:
-                # write_audio("web", "voice", audio_data)
-                await transcriber.transcribe_audio(audio_data)  # 受信した音声データをtranscriberに渡して文字起こし
+                transcriber.process_audio(audio_data, None, None, None)
 
         @websocket_server.on_tts_audio
         async def handle_tts_audio(wav_data):
@@ -120,6 +116,9 @@ def start_transcription(user_settings):
         asyncio.set_event_loop(event_loop)
         thread = threading.Thread(target=event_loop.run_forever, daemon=True)
         thread.start()
+
+        # Start transcription
+        asyncio.run_coroutine_threadsafe(transcriber.start_transcription(), event_loop)
 
         # websocket_serverが初期化された後にtts_threadを開始
         tts_thread = Thread(target=tts_worker, args=(tts_queue, websocket_server), daemon=True)

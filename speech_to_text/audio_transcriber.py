@@ -13,6 +13,9 @@ from .websoket_server import WebSocketServer
 from .openai_api import OpenAIAPI
 from .llm import CustomChatbot
 
+import uuid
+from datetime import datetime
+from .utils.file_utils import write_audio
 
 class AppOptions(NamedTuple):
     audio_device: int
@@ -52,6 +55,7 @@ class AudioTranscriber:
         self._running = asyncio.Event()
         self._transcribe_task = None
         self.chatbot = CustomChatbot(tts_queue)
+        self.processing_task = None
 
     async def transcribe_audio(self, audio_data: np.ndarray):
         print(f"Audio data shape: {audio_data.shape}")  # 追加: 音声データの形状を出力
@@ -84,8 +88,16 @@ class AudioTranscriber:
 
 
     def process_audio(self, audio_data: np.ndarray, frames: int, time, status):
+        # # Generate a unique filename using timestamp or UUID
+        # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # # uuid_str = str(uuid.uuid4())
+        # filename = f"audio_{timestamp}.wav"
+        # # Save the audio_data to a file
+        # write_audio(r'C:\Users\ningj\Documents\GitHub\speech-to-text\temp_audio_files', filename, audio_data)
+
         is_speech = self.vad.is_speech(audio_data)
         if is_speech:
+            # eel.on_recive_message("process_audio is_speech")
             self.silence_counter = 0
             self.audio_data_list.append(audio_data.flatten())
         else:
@@ -94,12 +106,14 @@ class AudioTranscriber:
                 self.audio_data_list.append(audio_data.flatten())
 
         if not is_speech and self.silence_counter > self.app_options.silence_limit:
+            # eel.on_recive_message("process_audio 1.")
             self.silence_counter = 0
 
             if self.app_options.create_audio_file:
                 self.all_audio_data_list.extend(self.audio_data_list)
 
             if len(self.audio_data_list) > self.app_options.noise_threshold:
+                # eel.on_recive_message("process_audio 2 .")
                 concatenate_audio_data = np.concatenate(self.audio_data_list)
                 self.audio_data_list.clear()
                 self.audio_queue.put(concatenate_audio_data)
@@ -107,80 +121,34 @@ class AudioTranscriber:
                 # noise clear
                 self.audio_data_list.clear()
 
-    def batch_transcribe_audio(self, audio_data: np.ndarray):
-        segment_list = []
-        segments, _ = self.whisper_model.transcribe(
-            audio=audio_data, **self.transcribe_settings
-        )
-
-        for segment in segments:
-            word_list = []
-            if self.transcribe_settings["word_timestamps"] == True:
-                for word in segment.words:
-                    word_list.append(
-                        {
-                            "start": word.start,
-                            "end": word.end,
-                            "text": word.word,
-                        }
-                    )
-            segment_list.append(
-                {
-                    "start": segment.start,
-                    "end": segment.end,
-                    "text": segment.text,
-                    "words": word_list,
-                }
-            )
-
-        eel.transcription_clear()
-
-        if self.openai_api is not None:
-            self.text_proofreading(segment_list)
-        else:
-            eel.on_recive_segments(segment_list)
-
-    def text_proofreading(self, segment_list: list):
-        # Use [#] as a separator
-        combined_text = "[#]" + "[#]".join(segment["text"] for segment in segment_list)
-        result = self.openai_api.text_proofreading(combined_text)
-        split_text = result.split("[#]")
-
-        del split_text[0]
-
-        eel.display_transcription("Before text proofreading.")
-        eel.on_recive_segments(segment_list)
-
-        if len(split_text) == len(segment_list):
-            for i, segment in enumerate(segment_list):
-                segment["text"] = split_text[i]
-                segment["words"] = []
-            eel.on_recive_message("proofread success.")
-            eel.display_transcription("After text proofreading.")
-            eel.on_recive_segments(segment_list)
-        else:
-            eel.on_recive_message("proofread failure.")
-            eel.on_recive_message(result)
-
     async def start_transcription(self):
         try:
             self.transcribing = True
             self._running.set()
             eel.on_recive_message("Transcription started.")
+            self.processing_task = asyncio.create_task(self.process_audio_queue())
             while self._running.is_set():
                 await asyncio.sleep(1)
         except Exception as e:
             eel.on_recive_message(str(e))
 
+    async def process_audio_queue(self):
+        while self._running.is_set():
+            # eel.on_recive_message("process_audio_queue running.")
+            try:
+                audio_data = self.audio_queue.get(block=False)
+                eel.on_recive_message("got from audio queue")
+                await self.transcribe_audio(audio_data)
+            except queue.Empty:
+                await asyncio.sleep(0.1)
+
     async def stop_transcription(self):
         try:
             self.transcribing = False
-            if self._transcribe_task is not None:
-                self.event_loop.call_soon_threadsafe(self._transcribe_task.cancel)
-                self._transcribe_task = None
-
-            # ... (streamに関連する処理を削除)
-
+            self._running.clear()
+            if self.processing_task is not None:
+                self.processing_task.cancel()
+                self.processing_task = None
             eel.on_recive_message("Transcription stopped.")
         except Exception as e:
             eel.on_recive_message(str(e))
