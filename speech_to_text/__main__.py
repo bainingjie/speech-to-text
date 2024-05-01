@@ -100,6 +100,7 @@ def start_transcription(user_settings):
         async def handle_tts_audio(wav_data):
             # TTSの音声データをWebSocketクライアントに送信
             await websocket_server.send_binary(wav_data)
+            eel.on_recive_message("tts_worker sent audio to websocket client")
 
         if app_settings.use_openai_api:
             openai_api = OpenAIAPI()
