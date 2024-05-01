@@ -1,68 +1,58 @@
-import requests
-import json
-import time
-from pydub import AudioSegment
-from pydub.playback import play
-import os,io,eel,asyncio
-
-def get_audio_query(text, speaker=1, max_retries=5, retry_interval=0.1):
-    query_payload = {"text": text, "speaker": speaker}
-    retries = 0
-    while retries < max_retries:
-        try:
-            url = "http://localhost:50021/audio_query"
-            r = requests.post(url, params=query_payload, timeout=(1.0, 5.0))
-            if r.status_code == 200:
-                eel.on_recive_message("tts request1 done with " + str(retries))
-                return r.json()
-        except requests.exceptions.RequestException:
-            print('Request failed, retrying...')
-            retries += 1
-            time.sleep(retry_interval)
-    raise Exception("Failed to get audio query after {} retries".format(max_retries))
-
-def run_synthesis(query_data, speaker=0, max_retries=5, retry_interval=0.1):
-    synth_payload = {"speaker": speaker}
-    query_data["speedScale"] = 1.5
-    query_data["outputSamplingRate"] = 8000
-    retries = 0
-    while retries < max_retries:
-        try:
-            url = "http://localhost:50021/synthesis"
-            r = requests.post(url, params=synth_payload, data=json.dumps(query_data), timeout=(1.0, 5.0))
-            if r.status_code == 200:
-                eel.on_recive_message("tts request2 done")
-                return r.content
-        except requests.exceptions.RequestException:
-            print('Request failed, retrying...')
-            retries += 1
-            time.sleep(retry_interval)
-    raise Exception("Failed to run synthesis after {} retries".format(max_retries))
-
-
-def get_audio_file_from_text(text):
-    eel.on_recive_message("tts request1 start")
-    query_data = get_audio_query(text)
-    
-    return run_synthesis(query_data)
-
-
+import os
+import io
+import eel
+import asyncio
 import base64
+from azure.cognitiveservices.speech import AudioDataStream, SpeechConfig, SpeechSynthesizer, SpeechSynthesisOutputFormat, ResultReason
+from azure.cognitiveservices.speech.audio import AudioOutputConfig
+
+def get_audio_file_from_text(text, rate=1.0):
+    eel.on_recive_message("tts request1 start")
+    audio_data = get_azure_tts_audio(text, rate)
+    return audio_data
+
+def get_azure_tts_audio(text, rate=1.0):
+    speech_config = SpeechConfig(subscription=os.getenv("AZURE_SUBSCRIPTION_KEY"), region=os.getenv("AZURE_REGION"))
+    speech_config.speech_synthesis_voice_name = "ja-JP-NanamiNeural"
+    speech_config.set_speech_synthesis_output_format(SpeechSynthesisOutputFormat.Riff16Khz16BitMonoPcm)
+    
+    synthesizer = SpeechSynthesizer(speech_config=speech_config, audio_config=None)
+    
+    ssml_template = """
+    <speak version='1.0' xmlns="https://www.w3.org/2001/10/synthesis" xml:lang='ja-JP'>
+        <voice name="ja-JP-NanamiNeural">
+            <prosody  rate='{}'>
+                {}
+            </prosody>
+        </voice>
+    </speak>
+    """
+    
+    ssml = ssml_template.format(rate, text)
+    
+    result = synthesizer.speak_ssml_async(ssml).get()
+    
+    if result.reason == ResultReason.SynthesizingAudioCompleted:
+        return result.audio_data
+    elif result.reason == ResultReason.Canceled:
+        cancellation_details = result.cancellation_details
+        print("Speech synthesis canceled: {}".format(cancellation_details.reason))
+
+        print("Error details: {}".format(cancellation_details.error_details))
+    else:
+        raise Exception(f"Speech synthesis failed: {result.reason}")
 
 def tts_worker(tts_queue, websocket_server):
     while True:
         wav_data = tts_queue.get()
         if wav_data is None:
             break
+        
         eel.on_recive_message("tts_worker start to process")
-        audio_segment = AudioSegment.from_file(io.BytesIO(wav_data), format="wav", frame_rate=8000, channels=1, sample_width=2)
-
-        # 音声データをバイナリに変換
-        binary_data = audio_segment.raw_data
         
-        # バイナリデータをbase64でエンコード
-        base64_data = base64.b64encode(binary_data).decode('utf-8') 
+        # Convert the audio data to base64
+        base64_data = base64.b64encode(wav_data).decode('utf-8')
         
-        # WebSocketサーバーを介してエンコードされた音声データを送信
+        # Send the encoded audio data via WebSocket server
         if websocket_server._on_tts_audio_handler is not None:
             asyncio.run_coroutine_threadsafe(websocket_server._on_tts_audio_handler(base64_data), websocket_server.loop)

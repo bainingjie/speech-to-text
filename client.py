@@ -37,7 +37,7 @@ async def send_and_receive_audio():
                 audio_float32 = audio_array.astype(np.float32) / 32768.0
                 
                 # 音声データを再生
-                sd.play(audio_float32, samplerate=8000)
+                sd.play(audio_float32, samplerate=16000)
                 sd.wait()
                 
                 print("Received audio data played.")

@@ -8,13 +8,11 @@ from typing import NamedTuple
 from faster_whisper import WhisperModel
 from concurrent.futures import ThreadPoolExecutor
 
-from .utils.audio_utils import create_audio_stream
 from .vad import Vad
-from .utils.file_utils import write_audio
 from .websoket_server import WebSocketServer
 from .openai_api import OpenAIAPI
 from .llm import CustomChatbot
-from .tts import get_audio_file_from_text
+
 
 class AppOptions(NamedTuple):
     audio_device: int
