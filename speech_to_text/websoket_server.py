@@ -17,8 +17,8 @@ class WebSocketServer:
         self._on_tts_audio_handler = None
 
     async def start_server(self):
-        print(f"Starting WebSocket server on ws://localhost:{8765}")
-        self.server = await websockets.serve(self.handler, "localhost", 8765)
+        print(f"Starting WebSocket server on ws://localhost:{443}")
+        self.server = await websockets.serve(self.handler, "localhost", 443)
 
     async def handler(self, ws: websockets.WebSocketServerProtocol, path):
         self.websocket = ws

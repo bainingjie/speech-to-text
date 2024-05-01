@@ -18,24 +18,6 @@ def get_valid_input_devices():
     return valid_devices
 
 
-# create an audio stream
-def create_audio_stream(selected_device, callback):
-    RATE = 16000
-    CHUNK = 512
-    CHANNELS = 1
-    DTYPE = "float32"
-
-    stream = sd.InputStream(
-        device=selected_device,
-        channels=CHANNELS,
-        samplerate=RATE,
-        callback=callback,
-        dtype=DTYPE,
-        blocksize=CHUNK,
-    )
-
-    return stream
-
 
 def base64_to_audio(base64_string):
     try:

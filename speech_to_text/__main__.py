@@ -13,7 +13,7 @@ from .openai_api import OpenAIAPI
 from queue import Queue
 from threading import Thread
 from .tts import tts_worker
-
+import datetime
 tts_queue = Queue()
 
 
@@ -64,6 +64,8 @@ def get_user_settings():
 
     return user_settings
 
+count_message=0
+
 @eel.expose
 def start_transcription(user_settings):
     global transcriber, event_loop, thread, websocket_server, openai_api, tts_queue, tts_thread
@@ -89,9 +91,13 @@ def start_transcription(user_settings):
         )
         eel.on_recive_message("websocket initialized")
 
+        
         @websocket_server.on_message
         async def handle_websocket_message(message):
-            global transcriber
+            global transcriber,count_message
+            
+            print(f"count:{count_message},Timestamp: {datetime.datetime.now().isoformat()}")
+            count_message+=1
             audio_data = base64_to_audio(message)  # WebSocketから受信した音声データをデコード
             if len(audio_data) > 0:
                 transcriber.process_audio(audio_data, None, None, None)

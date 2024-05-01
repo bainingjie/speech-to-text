@@ -76,9 +76,9 @@ class AudioTranscriber:
             )
 
             # Run the transcribe method in a thread
-            eel.on_recive_message("partiral function start run")
+            # eel.on_recive_message("partiral function start run")
             segments, _ = await self.event_loop.run_in_executor(executor, func)
-            eel.on_recive_message("partial function done")
+            # eel.on_recive_message("partial function done")
 
             for segment in segments:
                 print(f"Transcribed text: {segment.text}")
@@ -117,6 +117,7 @@ class AudioTranscriber:
                 concatenate_audio_data = np.concatenate(self.audio_data_list)
                 self.audio_data_list.clear()
                 self.audio_queue.put(concatenate_audio_data)
+                eel.on_recive_message("audio queue put")
             else:
                 # noise clear
                 self.audio_data_list.clear()
@@ -125,7 +126,7 @@ class AudioTranscriber:
         try:
             self.transcribing = True
             self._running.set()
-            eel.on_recive_message("Transcription started.")
+            # eel.on_recive_message("Transcription started.")
             self.processing_task = asyncio.create_task(self.process_audio_queue())
             while self._running.is_set():
                 await asyncio.sleep(1)
@@ -137,7 +138,7 @@ class AudioTranscriber:
             # eel.on_recive_message("process_audio_queue running.")
             try:
                 audio_data = self.audio_queue.get(block=False)
-                eel.on_recive_message("got from audio queue")
+                # eel.on_recive_message("got from audio queue")
                 await self.transcribe_audio(audio_data)
             except queue.Empty:
                 await asyncio.sleep(0.1)
