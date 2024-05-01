@@ -61,7 +61,7 @@ def tts_worker(tts_queue, websocket_server):
         binary_data = audio_segment.raw_data
         
         # バイナリデータをbase64でエンコード
-        base64_data = base64.b64encode(binary_data).decode('utf-8')
+        base64_data = base64.b64encode(binary_data).decode('utf-8') 
         
         # WebSocketサーバーを介してエンコードされた音声データを送信
         if websocket_server._on_tts_audio_handler is not None:
