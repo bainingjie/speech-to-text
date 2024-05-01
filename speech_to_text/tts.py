@@ -5,6 +5,7 @@ import asyncio
 import base64
 from azure.cognitiveservices.speech import AudioDataStream, SpeechConfig, SpeechSynthesizer, SpeechSynthesisOutputFormat, ResultReason
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
+from pydub import AudioSegment
 
 def get_audio_file_from_text(text, rate=1.0):
     eel.on_recive_message("tts request1 start")
@@ -33,11 +34,15 @@ def get_azure_tts_audio(text, rate=1.0):
     result = synthesizer.speak_ssml_async(ssml).get()
     
     if result.reason == ResultReason.SynthesizingAudioCompleted:
-        return result.audio_data
+        audio_data = result.audio_data
+        # Trim the audio to remove the click noise at the end
+        audio_segment = AudioSegment.from_wav(io.BytesIO(audio_data))
+        trimmed_audio_segment = audio_segment[:-200]  # Trim the last 100 milliseconds
+        trimmed_audio_data = trimmed_audio_segment.raw_data
+        return trimmed_audio_data
     elif result.reason == ResultReason.Canceled:
         cancellation_details = result.cancellation_details
         print("Speech synthesis canceled: {}".format(cancellation_details.reason))
-
         print("Error details: {}".format(cancellation_details.error_details))
     else:
         raise Exception(f"Speech synthesis failed: {result.reason}")
