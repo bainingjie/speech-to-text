@@ -101,7 +101,10 @@ def start_transcription(user_settings):
 
             audio_data = base64_to_audio(message)  # WebSocketから受信した音声データをデコード
             if len(audio_data) > 0:
-                transcriber.process_audio(audio_data, None, None, None)
+                asyncio.create_task(process_audio_data(audio_data))
+                
+        async def process_audio_data(audio_data):
+            transcriber.process_audio(audio_data, None, None, None)
 
         @websocket_server.on_tts_audio
         async def handle_tts_audio(wav_data):
