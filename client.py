@@ -53,7 +53,7 @@ async def send_and_receive_audio():
     stream = sd.InputStream(callback=audio_callback, channels=channels, samplerate=samplerate, blocksize=blocksize)
 
     try:
-        async with websockets.connect('ws://127.0.0.1:8765') as websocket:
+        async with websockets.connect('wss://4ef1-221-242-19-3.ngrok-free.app') as websocket:
             with stream:
                 # Inform the user that the microphone stream has started and is now sending audio data to the WebSocket server.
                 print("Microphone stream started. Sending audio data to the WebSocket server.")

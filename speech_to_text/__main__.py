@@ -96,8 +96,9 @@ def start_transcription(user_settings):
         async def handle_websocket_message(message):
             global transcriber,count_message
             
-            print(f"count:{count_message},Timestamp: {datetime.datetime.now().isoformat()}")
-            count_message+=1
+            # print(f"count:{count_message},Timestamp: {datetime.datetime.now().isoformat()}")
+            # count_message+=1
+
             audio_data = base64_to_audio(message)  # WebSocketから受信した音声データをデコード
             if len(audio_data) > 0:
                 transcriber.process_audio(audio_data, None, None, None)
@@ -106,7 +107,7 @@ def start_transcription(user_settings):
         async def handle_tts_audio(wav_data):
             # TTSの音声データをWebSocketクライアントに送信
             await websocket_server.send_binary(wav_data)
-            eel.on_recive_message("tts_worker sent audio to websocket client")
+            eel.on_recive_message(f"tts_worker sent audio to  client . Timestamp: {datetime.datetime.now().isoformat()}")
 
         if app_settings.use_openai_api:
             openai_api = OpenAIAPI()

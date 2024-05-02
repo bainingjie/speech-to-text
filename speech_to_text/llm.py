@@ -7,7 +7,7 @@ from langchain.callbacks.manager import AsyncCallbackManager
 from dotenv import load_dotenv
 from pydub import AudioSegment
 from pydub.playback import play
-import os,copy,eel
+import os,copy,eel,datetime
 from .tts import get_audio_file_from_text
 
 class CustomChatbot:
@@ -22,9 +22,13 @@ class CustomChatbot:
         return ChatAnthropic(
             temperature=0,
             api_key=self.claude_api_key,
-            model_name="claude-3-sonnet-20240229",
+            # claude-3-haiku-20240307
+            # claude-3-sonnet-20240229
+            model_name="claude-3-haiku-20240307",
             streaming=True,
-
+            model_kwargs=dict(system='''
+                              楽しく会話を進めてください。回答は短めでお願いします。できれば毎回の回答を15文字以内に抑えて。
+            ''')
         )
 
 
@@ -40,12 +44,14 @@ class CustomChatbot:
             self.temp += chunk.content
             for split_word in ["。", "?", "!"]:
                 if split_word in self.temp:
-                    eel.on_recive_message(self.temp)
+                    eel.on_recive_message(f"{self.temp} LLM responded. Timestamp: {datetime.datetime.now().isoformat()}")
                     temp2 = copy.deepcopy(self.temp)
                     self.temp = ""
                     wav_data = get_audio_file_from_text(temp2)
+                    eel.on_recive_message(f"got audio synthesized. Timestamp: {datetime.datetime.now().isoformat()}")
                     self.tts_queue.put(wav_data)
-                    
+                    eel.on_recive_message(f"got audio queued. Timestamp: {datetime.datetime.now().isoformat()}")
+        
         # eel.on_recive_message(response)
         # eel.on_recive_message("getting audio from voicevox")
         # wav_data = get_audio_file_from_text(response)

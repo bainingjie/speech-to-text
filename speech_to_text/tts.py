@@ -9,7 +9,7 @@ from pydub import AudioSegment
 from pydub.playback import play
 import simpleaudio as sa
 def get_audio_file_from_text(text, rate=1.0):
-    eel.on_recive_message("tts request1 start")
+    # eel.on_recive_message("tts request1 start")
     audio_data = get_azure_tts_audio(text, rate)
     return audio_data
 
@@ -70,6 +70,6 @@ def tts_worker(tts_queue, websocket_server):
         
         # Send the encoded audio data via WebSocket server
         if websocket_server._on_tts_audio_handler is not None:
-            eel.on_recive_message("tts_worker sending audio to websocket client")
+            # eel.on_recive_message("tts_worker sending audio to websocket client")
             asyncio.run_coroutine_threadsafe(websocket_server._on_tts_audio_handler(base64_data), websocket_server.loop)
             
