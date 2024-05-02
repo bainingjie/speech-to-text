@@ -5,16 +5,29 @@ import io
 import sounddevice as sd
 import numpy as np
 from queue import Queue
+import datetime
+import time
+
+send_time = None
+sent_time = None
 
 async def play_audio(receive_queue, samplerate):
+    global sent_time
     while True:
         audio_data = await receive_queue.get()
-        print(f"Size of audio data: {len(audio_data)} bytes")
+        print(f"GOT Size of audio data: {len(audio_data)} bytes . Timestamp: {datetime.datetime.now().isoformat()}")
         decoded_data = base64.b64decode(audio_data)
         audio_array = np.frombuffer(decoded_data, dtype=np.int16)
         audio_float32 = audio_array.astype(np.float32) / 32768.0
+        print(f"start to play . Timestamp: {datetime.datetime.now().isoformat()}")
+        # sent_time=time.time()
+        # latency_ms=(sent_time-send_time)*1000
+        # print(f"total latency:{latency_ms:.2f} ms")
+
         sd.play(audio_float32, samplerate=samplerate)
         sd.wait()
+        print(f"play ended . Timestamp: {datetime.datetime.now().isoformat()}")
+
 
 async def receive_audio_data(websocket, receive_queue, samplerate):
     while True:
@@ -71,12 +84,17 @@ async def send_and_receive_audio():
         stream.stop()
         await websocket.close()
 
+count_message=0
 async def send_audio_data(websocket, send_queue):
+    global count_message,send_time
     while True:
         # Get audio data from the send queue
         audio_data = await send_queue.get()
         
+        send_time=time.time()
         # Send the audio data to the WebSocket server
         await websocket.send(audio_data)
+
+
 
 asyncio.run(send_and_receive_audio())
