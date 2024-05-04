@@ -57,7 +57,13 @@ async def send_and_receive_audio():
             print(status)
         
         # Convert the audio data to base64
-        base64_data = base64.b64encode(indata.tobytes()).decode('utf-8')
+        # memo: デフォルトはfloat 32
+        # 愚直に考えると、indata*128なんだけど、声が小さい時は認識されないため、amplifyして*1024になってる。
+        
+        # TODO: float32→int16→mu-lawでint8に変換する
+        audio_data_int8 = np.clip(indata*1024,-128,127).astype(np.int8)
+        # print(max(audio_data_int8),min(audio_data_int8))
+        base64_data = base64.b64encode(audio_data_int8.tobytes()).decode('utf-8')
         
         # Put the audio data in the send queue
         loop.call_soon_threadsafe(send_queue.put_nowait, base64_data)
@@ -66,7 +72,7 @@ async def send_and_receive_audio():
     stream = sd.InputStream(callback=audio_callback, channels=channels, samplerate=samplerate, blocksize=blocksize)
 
     try:
-        async with websockets.connect('wss://4ef1-221-242-19-3.ngrok-free.app') as websocket:
+        async with websockets.connect('wss://a8a0-221-242-19-3.ngrok-free.app') as websocket:
             with stream:
                 # Inform the user that the microphone stream has started and is now sending audio data to the WebSocket server.
                 print("Microphone stream started. Sending audio data to the WebSocket server.")
