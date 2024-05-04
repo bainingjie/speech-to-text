@@ -91,6 +91,8 @@ def start_transcription(user_settings):
         )
         eel.on_recive_message("websocket initialized")
 
+
+
         
         @websocket_server.on_message
         async def handle_websocket_message(message):

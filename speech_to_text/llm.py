@@ -44,13 +44,14 @@ class CustomChatbot:
             self.temp += chunk.content
             for split_word in ["。", "?", "!"]:
                 if split_word in self.temp:
+                    print("llm responded")
                     eel.on_recive_message(f"{self.temp} LLM responded. Timestamp: {datetime.datetime.now().isoformat()}")
                     temp2 = copy.deepcopy(self.temp)
                     self.temp = ""
                     wav_data = get_audio_file_from_text(temp2)
                     eel.on_recive_message(f"got audio synthesized. Timestamp: {datetime.datetime.now().isoformat()}")
                     self.tts_queue.put(wav_data)
-                    eel.on_recive_message(f"got audio queued. Timestamp: {datetime.datetime.now().isoformat()}")
+                    # eel.on_recive_message(f"got audio queued. Timestamp: {datetime.datetime.now().isoformat()}")
         
         # eel.on_recive_message(response)
         # eel.on_recive_message("getting audio from voicevox")

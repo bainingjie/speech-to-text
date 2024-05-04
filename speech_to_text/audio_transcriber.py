@@ -58,8 +58,8 @@ class AudioTranscriber:
         self.processing_task = None
 
     async def transcribe_audio(self, audio_data: np.ndarray):
-        print(f"Audio data shape: {audio_data.shape}")  # 追加: 音声データの形状を出力
-        print(f"Audio data dtype: {audio_data.dtype}")  # 追加: 音声データの型を出力
+        # print(f"Audio data shape: {audio_data.shape}")  # 追加: 音声データの形状を出力
+        # print(f"Audio data dtype: {audio_data.dtype}")  # 追加: 音声データの型を出力
         # eel.on_recive_message("Received audio data from WebSocket")  # 追加
 
         # Ignore parameters that affect performance
@@ -99,22 +99,23 @@ class AudioTranscriber:
 
         is_speech = self.vad.is_speech(audio_data)
         if is_speech:
-            # eel.on_recive_message("process_audio is_speech")
+            eel.on_recive_message("is_speech before append")
             self.silence_counter = 0
             self.audio_data_list.append(audio_data.flatten())
+            # eel.on_recive_message("is_speech after append")
         else:
             self.silence_counter += 1
-            # if self.app_options.include_non_speech:
-            #     self.audio_data_list.append(audio_data.flatten())
+            # if self.silence_counter == 1:
+            #     eel.on_recive_message("silence counter is 1")
+
 
         if not is_speech and self.silence_counter > self.app_options.silence_limit:
-            # eel.on_recive_message("process_audio 1.")
             self.silence_counter = 0
 
             if len(self.audio_data_list) > self.app_options.noise_threshold:
-                # eel.on_recive_message("process_audio 2 .")
-                # eel.on_recive_message("audio queue put")
+                eel.on_recive_message(f"audio queue before put . Timestamp: {datetime.now().isoformat()}")
                 concatenate_audio_data = np.concatenate(self.audio_data_list)
+                # eel.on_recive_message("audio queue put end")
                 self.audio_data_list.clear()
                 self.audio_queue.put(concatenate_audio_data)
                 eel.on_recive_message(f"audio queue put . Timestamp: {datetime.now().isoformat()}")
