@@ -7,6 +7,7 @@ import numpy as np
 from queue import Queue
 import datetime
 import time
+import audioop
 
 send_time = None
 sent_time = None
@@ -56,17 +57,26 @@ async def send_and_receive_audio():
         if status:
             print(status)
         
-        # Convert the audio data to base64
-        # memo: デフォルトはfloat 32
-        # 愚直に考えると、indata*128なんだけど、声が小さい時は認識されないため、amplifyして*1024になってる。
-        
-        # TODO: float32→int16→mu-lawでint8に変換する
-        audio_data_int8 = np.clip(indata*1024,-128,127).astype(np.int8)
-        # print(max(audio_data_int8),min(audio_data_int8))
-        base64_data = base64.b64encode(audio_data_int8.tobytes()).decode('utf-8')
-        
-        # Put the audio data in the send queue
+        # *4 is amplifier
+        audio_data_int16 = np.clip(indata * 32768 *4, -32768, 32767).astype(np.int16)
+        mu_law_encoded = audioop.lin2ulaw(audio_data_int16.tobytes(),2)
+        # print(max(mu_law_encoded),min(mu_law_encoded))
+        base64_data = base64.b64encode(mu_law_encoded).decode('utf-8')    
         loop.call_soon_threadsafe(send_queue.put_nowait, base64_data)
+
+        # # Convert the audio data to base64
+        # # memo: デフォルトはfloat 32
+        # # 愚直に考えると、indata*128なんだけど、声が小さい時は認識されないため、amplifyして*1024になってる。
+        
+        # audio_data_int8 = np.clip(indata*2048,-128,127).astype(np.int8)
+        
+
+        # # 大きくて60ぐらいなんだよね。120まで行ってもよさそう。
+        # # print(max(audio_data_int8),min(audio_data_int8))
+        # base64_data = base64.b64encode(audio_data_int8.tobytes()).decode('utf-8')
+        
+        # # Put the audio data in the send queue
+        # loop.call_soon_threadsafe(send_queue.put_nowait, base64_data)
 
     # Open the audio stream
     stream = sd.InputStream(callback=audio_callback, channels=channels, samplerate=samplerate, blocksize=blocksize)
