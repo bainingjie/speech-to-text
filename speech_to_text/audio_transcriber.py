@@ -99,9 +99,9 @@ class AudioTranscriber:
 
         is_speech = self.vad.is_speech(audio_data)
         if is_speech:
-            eel.on_recive_message("is_speech before append")
+            # eel.on_recive_message("is_speech before append")
             self.silence_counter = 0
-            self.audio_data_list.append(audio_data.flatten())
+            self.audio_data_list.append(audio_data)
             # eel.on_recive_message("is_speech after append")
         else:
             self.silence_counter += 1
@@ -117,7 +117,7 @@ class AudioTranscriber:
                 concatenate_audio_data = np.concatenate(self.audio_data_list)
                 # eel.on_recive_message("audio queue put end")
                 self.audio_data_list.clear()
-                self.audio_queue.put(concatenate_audio_data)
+                self.audio_queue.put(concatenate_audio_data.flatten())
                 eel.on_recive_message(f"audio queue put . Timestamp: {datetime.now().isoformat()}")
             else:
                 # noise clear
