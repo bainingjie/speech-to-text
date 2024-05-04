@@ -3,7 +3,7 @@ import io
 import soundfile as sf
 import numpy as np
 import librosa,base64
-
+import audioop 
 
 # get a list of valid input devices
 def get_valid_input_devices():
@@ -28,11 +28,19 @@ def base64_to_audio(base64_string):
 
         audio_data = base64.b64decode(base64_string)
         
-        audio_data = np.frombuffer(audio_data, dtype=np.int8)
-        audio_data = audio_data.astype(np.float32) / 128.0
-        # audio_data = np.frombuffer(audio_data, dtype=np.float32)
+        # audio_data = np.frombuffer(audio_data, dtype=np.int8)
+        # audio_data = audio_data.astype(np.float32) / 128.0
+        # # audio_data = np.frombuffer(audio_data, dtype=np.float32)
+        # return audio_data
+
+        # mu-law decoding
+        audio_data = np.frombuffer(audio_data, dtype=np.uint8)  # mu-law is typically 8-bit
+        audio_data = audioop.ulaw2lin(audio_data, 2)  # Convert mu-law to linear PCM
+        audio_data = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32)
+        audio_data /= 32768.0  # Normalize to [-1, 1] range
 
         return audio_data
+    
     except (base64.binascii.Error, ValueError) as e:
         print(f"Error decoding base64 string: {e}")
         return np.array([])

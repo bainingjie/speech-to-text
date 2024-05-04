@@ -64,7 +64,7 @@ class AudioTranscriber:
 
         # Ignore parameters that affect performance
         transcribe_settings = self.transcribe_settings.copy()
-        print(transcribe_settings)
+        # print(transcribe_settings)
         transcribe_settings["without_timestamps"] = True
         transcribe_settings["word_timestamps"] = False
 
