@@ -19,12 +19,14 @@ def write_json(dir_name: str, json_name: str, data: dict):
     with open(file_path, "w") as f:
         json.dump(data, f)
 
-
 def write_audio(dir_name: str, file_name: str, data):
     file_path = os.path.join(app_root_dir, dir_name, file_name + ".wav")
 
-    # If a file with the same name already exists, remove it to forcefully write
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    try:
+        # If a file with the same name already exists, remove it to forcefully write
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
-    sf.write(file_path, data, 16000)
+        sf.write(file_path, data, 16000)
+    except Exception as e:
+        print(f"Failed to write audio file {file_path}: {e}")

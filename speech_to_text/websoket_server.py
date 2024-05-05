@@ -18,7 +18,7 @@ class WebSocketServer:
 
     async def start_server(self):
         print(f"Starting WebSocket server on ws://localhost:{3000}")
-        self.server = await websockets.serve(self.handler, "localhost", 3000)
+        self.server = await websockets.serve(self.handler, "localhost", 3000,ping_interval=600, ping_timeout=60)
 
     async def handler(self, ws: websockets.WebSocketServerProtocol, path):
         self.websocket = ws
