@@ -18,12 +18,13 @@ async def play_audio(receive_queue, samplerate):
         audio_data = await receive_queue.get()
         print(f"GOT Size of audio data: {len(audio_data)} bytes . Timestamp: {datetime.datetime.now().isoformat()}")
         decoded_data = base64.b64decode(audio_data)
-        audio_array = np.frombuffer(decoded_data, dtype=np.int16)
-        audio_float32 = audio_array.astype(np.float32) / 32768.0
+        
+        # Decode mu-law to PCM
+        audio_array = audioop.ulaw2lin(decoded_data, 2)
+        
+        audio_int16 = np.frombuffer(audio_array, dtype=np.int16)
+        audio_float32 = audio_int16.astype(np.float32) / 32768.0
         print(f"start to play . Timestamp: {datetime.datetime.now().isoformat()}")
-        # sent_time=time.time()
-        # latency_ms=(sent_time-send_time)*1000
-        # print(f"total latency:{latency_ms:.2f} ms")
 
         sd.play(audio_float32, samplerate=samplerate)
         sd.wait()
@@ -57,8 +58,8 @@ async def send_and_receive_audio():
         if status:
             print(status)
         
-        # *4 is amplifier
-        audio_data_int16 = np.clip(indata * 32768 *4, -32768, 32767).astype(np.int16)
+        # *8 is amplifier
+        audio_data_int16 = np.clip(indata * 32768 *16, -32768, 32767).astype(np.int16)
         mu_law_encoded = audioop.lin2ulaw(audio_data_int16.tobytes(),2)
         # print(max(mu_law_encoded),min(mu_law_encoded))
         base64_data = base64.b64encode(mu_law_encoded).decode('utf-8')    
@@ -82,7 +83,7 @@ async def send_and_receive_audio():
     stream = sd.InputStream(callback=audio_callback, channels=channels, samplerate=samplerate, blocksize=blocksize)
 
     try:
-        async with websockets.connect('wss://a8a0-221-242-19-3.ngrok-free.app') as websocket:
+        async with websockets.connect('ws://127.0.0.1:3000') as websocket:
             with stream:
                 # Inform the user that the microphone stream has started and is now sending audio data to the WebSocket server.
                 print("Microphone stream started. Sending audio data to the WebSocket server.")

@@ -14,6 +14,8 @@ from queue import Queue
 from threading import Thread
 from .tts import tts_worker
 import datetime
+from .azure_stt import transcribe_audio,init_tts_queue
+
 tts_queue = Queue()
 
 
@@ -91,7 +93,7 @@ def start_transcription(user_settings):
         )
         eel.on_recive_message("websocket initialized")
 
-
+        init_tts_queue(tts_queue)
 
         
         @websocket_server.on_message
@@ -102,9 +104,17 @@ def start_transcription(user_settings):
             # count_message+=1
 
             audio_data = base64_to_audio(message)  # WebSocketから受信した音声データをデコード
+
+            # audio_data = np.frombuffer(audio_data, dtype=np.int8)
+            # audio_data = audio_data.astype(np.float32) / 128.0
             if len(audio_data) > 0:
-                asyncio.create_task(process_audio_data(audio_data))
+                # await 
+                asyncio.create_task(transcribe_audio(audio_data))
+                # asyncio.create_task(process_audio_data(audio_data))
                 
+
+
+
         async def process_audio_data(audio_data):
             transcriber.process_audio(audio_data, None, None, None)
 
