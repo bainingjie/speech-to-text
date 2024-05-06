@@ -115,8 +115,6 @@ def start_transcription(user_settings):
 
 
 
-        async def process_audio_data(audio_data):
-            transcriber.process_audio(audio_data, None, None, None)
 
         @websocket_server.on_tts_audio
         async def handle_tts_audio(wav_data):
@@ -127,21 +125,11 @@ def start_transcription(user_settings):
         if app_settings.use_openai_api:
             openai_api = OpenAIAPI()
 
-        transcriber = AudioTranscriber(
-            event_loop,
-            whisper_model,
-            filtered_transcribe_settings,
-            app_settings,
-            websocket_server,  # WebSocketサーバーをtranscriberに渡す
-            openai_api,
-            tts_queue
-        )
         asyncio.set_event_loop(event_loop)
         thread = threading.Thread(target=event_loop.run_forever, daemon=True)
         thread.start()
 
-        # Start transcription
-        asyncio.run_coroutine_threadsafe(transcriber.start_transcription(), event_loop)
+
 
         # websocket_serverが初期化された後にtts_threadを開始
         tts_thread = Thread(target=tts_worker, args=(tts_queue, websocket_server), daemon=True)

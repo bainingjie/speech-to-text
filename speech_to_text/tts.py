@@ -6,7 +6,6 @@ import base64
 from azure.cognitiveservices.speech import AudioDataStream, SpeechConfig, SpeechSynthesizer, SpeechSynthesisOutputFormat, ResultReason
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
 from pydub import AudioSegment
-from pydub.playback import play
 import audioop
 
 def get_audio_file_from_text(text, rate=1.0):
@@ -48,6 +47,20 @@ def get_azure_tts_audio(text, rate=1.0):
         print("Error details: {}".format(cancellation_details.error_details))
     else:
         raise Exception(f"Speech synthesis failed: {result.reason}")
+
+# def tts_worker(tts_queue, websocket_server):
+#     while True:
+#         wav_data = tts_queue.get()
+#         if wav_data is None:
+#             break
+
+#         # Convert the audio data to base64
+#         base64_data = base64.b64encode(wav_data).decode('utf-8')
+        
+#         # Send the encoded audio data via WebSocket server
+#         if websocket_server._on_tts_audio_handler is not None:
+#             # eel.on_recive_message("tts_worker sending audio to websocket client")
+#             asyncio.run_coroutine_threadsafe(websocket_server._on_tts_audio_handler(base64_data), websocket_server.loop)
 
 def tts_worker(tts_queue, websocket_server):
     while True:

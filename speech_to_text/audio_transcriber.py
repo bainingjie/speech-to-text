@@ -16,7 +16,8 @@ from .llm import CustomChatbot
 import uuid
 from datetime import datetime
 from .utils.file_utils import write_audio
-
+from .tts import get_audio_file_from_text
+import wave
 class AppOptions(NamedTuple):
     audio_device: int
     silence_limit: int = 8
@@ -55,6 +56,7 @@ class AudioTranscriber:
         self._running = asyncio.Event()
         self._transcribe_task = None
         self.chatbot = CustomChatbot(tts_queue)
+        self.tts_queue = tts_queue
         self.processing_task = None
 
     async def transcribe_audio(self, audio_data: np.ndarray):
@@ -64,7 +66,7 @@ class AudioTranscriber:
 
         # Ignore parameters that affect performance
         transcribe_settings = self.transcribe_settings.copy()
-        print(transcribe_settings)
+        # print(transcribe_settings)
         transcribe_settings["without_timestamps"] = True
         transcribe_settings["word_timestamps"] = False
 
@@ -81,13 +83,29 @@ class AudioTranscriber:
             segments, _ = await self.event_loop.run_in_executor(executor, func)
             # eel.on_recive_message("partial function done")
 
+            
+
             for segment in segments:
-                print(f"Transcribed text: {segment.text}")
-                eel.on_recive_message(f"Transcribed text: {segment.text}") 
-                eel.display_transcription(segment.text)
-                eel.on_recive_message(f"transcribed. Timestamp: {datetime.now().isoformat()}")
-                await self.chatbot.run(segment.text)
-                
+                try:
+                    print(f"Transcribed text: {segment.text}")
+                    eel.on_recive_message(f"Transcribed text: {segment.text}") 
+                    eel.display_transcription(segment.text)
+                    eel.on_recive_message(f"transcribed. Timestamp: {datetime.now().isoformat()}")
+                    # print("here1")
+
+                    # Assuming 'filename' is the path to your WAV file
+                    filename = '../temp_audio_files/はい.wav'
+                    # Open the WAV file
+                    with wave.open(filename, 'rb') as wav_file:
+                        # Read frames and convert to byte array
+                        wav_data = wav_file.readframes(wav_file.getnframes())
+                    # Put the wav_data into the tts_queue
+                    self.tts_queue.put(wav_data)
+
+                    # print("here3")
+                    await self.chatbot.run(segment.text)
+                except Exception as e:
+                    print(f"Error processing segment: {e}")
 
 
     def process_audio(self, audio_data: np.ndarray, frames: int, time, status):
@@ -119,6 +137,7 @@ class AudioTranscriber:
                 # eel.on_recive_message("audio queue put end")
                 self.audio_data_list.clear()
                 self.audio_queue.put(concatenate_audio_data.flatten())
+
                 eel.on_recive_message(f"audio queue put . Timestamp: {datetime.now().isoformat()}")
             else:
                 # noise clear
