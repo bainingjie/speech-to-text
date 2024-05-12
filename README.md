@@ -1,3 +1,25 @@
+`branch:　twilio` 　→　gpuが必要。TTSはwhisperを利用(local)。
+
+`branch:　azure` 　→　cpuのみで大丈夫。TTSはazureを利用（cloud hosted）。
+
+### 利用方法
+
+- `.env`ファイルを作成する
+    - 白からもらう
+    - ***__ main* __**.pyと同じdirectoryに置く
+- `ngrok http 3000`   （remoteのgpuを利用しない場合は、いらない）
+- `python -m speech_to_text`
+    - まずは `pip install -r requirements.txt`
+    - websocketのserverを立ち上げる(speech_to_textのファルを実行）
+    - eelのguiが見えるはず
+        - 緑のstartボタンを押す
+- `python client.py`
+    - websocketのclientを立ち上げる
+    - urlを変更する`wss:// <url from ngrok>`  or `ws:// 127.0.0.1:3000`
+  
+
+
+
 # speech-to-text
 
 Real-time transcription using [faster-whisper](https://github.com/guillaumekln/faster-whisper)
